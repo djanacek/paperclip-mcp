@@ -10,10 +10,10 @@ MCP spec:      https://modelcontextprotocol.io
 
 Configuration (environment variables):
     Authentication — provide ONE of:
-      PAPERCLIP_API_KEY        Bearer API key (Settings → API Keys → New Key).
+      PAPERCLIP_API_KEY        Bearer API key (Settings -> API Keys -> New Key).
       PAPERCLIP_SESSION_TOKEN  Value of `__Secure-better-auth.session_token` cookie
-                               from a logged-in browser session (DevTools →
-                               Application → Cookies → copy value).
+                               from a logged-in browser session (DevTools ->
+                               Application -> Cookies -> copy value).
 
     PAPERCLIP_COMPANY_ID       Required. Company UUID from the Paperclip UI URL.
     PAPERCLIP_BASE_URL         Optional. Default: http://localhost:3100/api
@@ -200,7 +200,7 @@ async def list_issues(
         assignee_agent_id: UUID of the agent to filter by. Leave empty for all agents.
         project_id: UUID of the project to filter by. Leave empty for all projects.
         label: Label name to filter by. Leave empty to skip label filtering.
-        limit: Maximum number of results to return (1–200). Default: 50.
+        limit: Maximum number of results to return (1-200). Default: 50.
     """
     params: dict[str, Any] = {"status": status, "limit": max(1, min(limit, 200))}
     if assignee_agent_id:
@@ -346,6 +346,36 @@ async def comment_on_issue(
     if reopen:
         payload["reopen"] = True
     return await _post(f"/issues/{issue_id}/comments", payload)
+
+
+@mcp.tool()
+async def list_comments(
+    issue_id: str,
+    limit: int = 50,
+    after: str = "",
+) -> Any:
+    """List comments on an issue in chronological order (oldest comment first).
+
+    Use this to read the full comment thread on a ticket, including agent
+    progress updates and human replies.
+
+    Returns a list of comment objects, each with: id, body, author, createdAt,
+    and parentId (set when the comment is a reply to another comment).
+
+    Args:
+        issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
+        limit: Maximum number of comments to return (1-500). Default: 50.
+        after: Cursor for forward pagination. Pass the id of the last comment
+               returned in the previous page to fetch the next page of newer
+               comments. Leave empty to start from the oldest comment.
+    """
+    params: dict[str, Any] = {
+        "limit": max(1, min(limit, 500)),
+        "order": "asc",
+    }
+    if after:
+        params["after"] = after
+    return await _get(f"/issues/{issue_id}/comments", params)
 
 
 @mcp.tool()
@@ -530,7 +560,7 @@ async def list_activity(
 
     Args:
         agent_id: Filter to a specific agent UUID. Leave empty for all agents.
-        limit: Maximum number of entries to return (1–100). Default: 20.
+        limit: Maximum number of entries to return (1-100). Default: 20.
     """
     params: dict[str, Any] = {"limit": max(1, min(limit, 100))}
     if agent_id:
