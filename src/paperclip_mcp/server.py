@@ -349,6 +349,36 @@ async def comment_on_issue(
 
 
 @mcp.tool()
+async def list_comments(
+    issue_id: str,
+    limit: int = 50,
+    after: str = "",
+) -> Any:
+    """List comments on an issue in chronological order (oldest comment first).
+
+    Use this to read the full comment thread on a ticket, including agent
+    progress updates and human replies.
+
+    Returns a list of comment objects, each with: id, body, author, createdAt,
+    and parentId (set when the comment is a reply to another comment).
+
+    Args:
+        issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
+        limit: Maximum number of comments to return (1-500). Default: 50.
+        after: Cursor for forward pagination. Pass the id of the last comment
+               returned in the previous page to fetch the next page of newer
+               comments. Leave empty to start from the oldest comment.
+    """
+    params: dict[str, Any] = {
+        "limit": max(1, min(limit, 500)),
+        "order": "asc",
+    }
+    if after:
+        params["after"] = after
+    return await _get(f"/issues/{issue_id}/comments", params)
+
+
+@mcp.tool()
 async def delete_issue(issue_id: str) -> Any:
     """Permanently delete an issue. This action cannot be undone.
 
